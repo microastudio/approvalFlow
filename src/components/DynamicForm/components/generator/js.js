@@ -125,11 +125,15 @@ function mixinMethod ( type ) {
   const minxins = {
     file: confGlobal.formBtns ? {
       submitForm: `submitForm () {
-          if (!this.checkTableData()) console.log('false')
-          console.log(this.${confGlobal.formModel})
+          if (!this.checkTableData()) return
           this.$refs['${confGlobal.formRef}'].validate(valid => {
             if(!valid) return
-            console.log(this.${confGlobal.formModel})
+            this.$notify({
+              title: '表单数据',
+              message: '请在控制台中查看数据输出',
+              position: 'bottom-right'
+            });
+            console.log('表单数据', this.${confGlobal.formModel})
             // TODO 提交表单
           })
         },`,
@@ -145,12 +149,13 @@ function mixinMethod ( type ) {
           })
           return valid
         },`,
+      // 使用drawer抽屉 显示定制组件 说明
       showExplain: `showExplain (explainText, title) {
         if(!explainText) return
         this.drawerTitle = title
         this.drawerText = explainText
         this.drawerVisible = true
-      }`
+      },`
     } : null,
     dialog: {
       onOpen: 'onOpen() {},',

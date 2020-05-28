@@ -1,6 +1,13 @@
 <template>
 <div  class="fc-table-box">
-  <el-table :data="formData" border class="fc-table" @cell-click="focusInput" v-bind="config.tableConf || {}">
+  <el-table 
+  :data="formData" 
+  border 
+  class="fc-table"
+  @cell-click="focusInput" 
+  v-bind="config.tableConf || {}"
+  :show-summary="config['show-summary']"
+  :summary-method="getSummaries">
       <el-table-column width="50" align="center">
         <!-- 序号 -->
         <template slot-scope="scope">
@@ -18,7 +25,8 @@
       <el-table-column
         v-for="(head, cindex) in tableData"
         :key="head.formId"
-        :min-width="head['min-width']">
+        :min-width="head['min-width']"
+        :prop="head.vModel">
          <template slot="header">
            <span style="color: #f56c6c;" v-if="head.required">*</span>
            {{head['label']}}
@@ -43,7 +51,9 @@
               <template v-else-if="head.tag === 'el-upload'">
                 <el-upload
                 v-bind="getConfById(head.formId)" 
-                :on-success="(res) => onUploadSuccess(res, formData[scope.$index][cindex])">
+                :on-success="(res) => onUploadSuccess(res, formData[scope.$index][cindex])"
+                @mouseleave.native="hideUploadList"
+                @mouseenter.native="showUploadList">
                   <span slot="default" >
                     已上传
                     {{formData[scope.$index][cindex].value.length}}
@@ -67,7 +77,7 @@
     <div class="actions">
       <el-button @click="addRow" type="text">
         <i class="el-icon-plus"></i>
-        添加
+        {{ config.actionText }}
         </el-button>
     </div>
 </div>
@@ -92,6 +102,7 @@ export default {
   },
 
   created(){
+    console.log(this.config)
     this.tableData = this.filterProps()
     this.formData = [this.getEmptyRow()]
   },
@@ -188,32 +199,30 @@ export default {
       this.formData.push(this.getEmptyRow())
     },
     /**
-     * 对表格进行合计
+     * 对表格进行合计 目前只支持数字，金额，滑块
      */
     getSummaries (param) {
       const { columns, data } = param;
       const sums = [];
+      if(this.tableData.length + 1 !== columns.length) return []  // 防止多次加载
+      // 获取数字相关组件的输入值
+      const isNumCmp = tag => ['fc-amount','el-input-number', 'el-slider'].includes(tag)
+      const getValue = (arr, key) => {
+       const target =  arr.find(t => t.vModel === key)
+       if (!target) return NaN
+       if(isNumCmp(target.tag)) return target.value || 0
+       return NaN
+      }
+
       columns.forEach((column, index) => {
         if (index === 0) {
-          sums[index] = '合计';
-          return;
+          sums[index] = '合计'
+          return
         }
-        const values = data.map(item => Number(item[column.property]));
-        if (!values.every(value => isNaN(value))) {
-          sums[index] = values.reduce((prev, curr) => {
-            const value = Number(curr);
-            if (!isNaN(value)) {
-              return prev + curr;
-            } else {
-              return prev;
-            }
-          }, 0);
-          sums[index] += ' 元';
-        } else {
-          sums[index] = 'N/A';
-        }
+        const sumVal = data.reduce((sum, d) => sum + getValue(d, column.property), 0)
+        sums[index] = Number.isNaN(sumVal) ? '' : sumVal
       });
-
+      
       return sums;
     },
 
@@ -221,6 +230,22 @@ export default {
       !Array.isArray(target.value) && (target.value = [])
       target.value.push(response)
     },
+
+    showUploadList (ev) {
+      const btn = ev.currentTarget
+      const { offsetX, clientX, clientY, offsetY } = ev
+      const list = btn.querySelector('.el-upload-list--text')
+      list && list.classList.add('show')
+      const unit = v => v + 'px'
+      list.style.left = unit(clientX - offsetX)
+      list.style.top = unit(clientY - offsetY + btn.clientHeight)
+    },
+
+    hideUploadList (ev) {
+      const btn = ev.currentTarget
+      const list = btn.querySelector('.el-upload-list--text')
+      list && setTimeout(() => list.classList.remove('show'), 500)
+    }
   }
 };
 </script>
@@ -283,8 +308,11 @@ export default {
         font-size 12px
         padding-left 6px
         color #f56c6c
-      .cell > div
-        width 100%
+      .cell 
+        position relative
+        > div
+          width 100%
+          min-height 40px
       
     td:not(:first-child)
       vertical-align top
@@ -312,11 +340,6 @@ export default {
       &:hover
         &::after, &::before
           border-color red
-
-        .el-upload-list--text
-          position fixed
-          margin-top 4px
-          z-index 9
         
   .fc-org-select
     position relative
@@ -325,15 +348,14 @@ export default {
     padding-left 10px
 
   .el-upload-list--text
-    position absolute
-    margin-top 28px
+    position fixed
     margin-left -6px
     background white
     box-shadow 2px 2px 8px 2px rgba(0, 0, 0, .1)
-    max-width 200px
+    max-width 250px
     transition margin-top .3s
-    &:hover
-      position fixed
-      margin-top 4px
-      z-index 9
+    display none
+    z-index 9
+    &.show
+      display block
 </style>

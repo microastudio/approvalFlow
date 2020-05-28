@@ -507,7 +507,7 @@ export const selectComponents = [{
   //   asSummary: false
   // }
 ]
-
+// 容器组件
 export const layoutComponents = [{
   layout: 'rowFormItem',
   rowType: 'layout',
@@ -533,7 +533,8 @@ export const layoutComponents = [{
   children: [],
   actionText: '添加',
   tableConf: {},
-  showDivider: false
+  showDivider: false,
+  'show-summary': true
 }]
 
 export const commonComponents = [...inputComponents, ...selectComponents, ...layoutComponents]
