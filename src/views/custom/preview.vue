@@ -23,6 +23,28 @@ const loadVueOption = (jsCode, htmlCode, defaultData) => {
   main.template = `<div style="padding:3rem 2rem;">${htmlCode}</div>`
   return main
 }
+
+/**
+ * 默认数据  预览已经填写过的表单时
+ * 将以下数据合并到Vue实例中即可
+ */
+const defData = {
+  "field2": "22",
+  "field3": "本科",
+  "field4": "男",
+  "field5": [
+    {
+      "field6": [
+        "2020-07-01",
+        "2020-08-03"
+      ],
+      "field7": "212",
+      "field8": "后端",
+      "field9": []
+    }
+  ],
+  "field10": 21,
+}
 export default {
   data(){
     return{
@@ -31,9 +53,10 @@ export default {
   },
   mounted() {
     // defaultData 可以将默认formData覆盖到data中
-    let { jsCode, htmlCode, cssCode } = this.$route.params.formData
+    const { jsCode, htmlCode, cssCode } = this.$route.params.formData
     loadStyle(cssCode)
-    let Form = Vue.extend(loadVueOption(jsCode, htmlCode, {}))
+    const OPTION = loadVueOption(jsCode, htmlCode, defData)
+    const Form = Vue.extend(OPTION)
     new Form().$mount("#customForm")
   },
   beforeDestroy(){

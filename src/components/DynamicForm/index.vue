@@ -141,8 +141,8 @@
         >预览</el-button>
         <el-button class="delete-btn" icon="el-icon-delete" type="text" @click="empty">清空</el-button>
       </div>
-      <div id="ipad">
-        <div class="outeripad">
+      <div id="ipad" ref="ipad">
+        <div class="outeripad" :class="[ipadMode]">
           <div class="ipadbody">
             <div class="ipadscreen">
               <el-scrollbar class="center-scrollbar">
@@ -180,7 +180,10 @@
               </el-scrollbar>
             </div>
             <div class="ipadcamera"></div>
-            <div class="ipadhomebutton"></div>
+            <el-tooltip effect="dark" content="切换横/竖模式" placement="top">
+              <div class="ipadhomebutton" @click="ipadMode = ipadMode === 'landscape' ? 'portrait' : 'landscape'">
+              </div>
+            </el-tooltip>
           </div>
         </div>
       </div>
@@ -288,7 +291,8 @@ export default {
       generateConf: null,
       showFileName: false,
       activeData: drawingList[0],
-      activeTabName: "common"
+      activeTabName: "common",
+      ipadMode: 'portrait'
     };
   },
   watch: {
@@ -330,7 +334,7 @@ export default {
   },
   created() {
     if (typeof this.conf === 'object' && this.conf !== null) {
-      Object.assign(this.drawingList, this.conf.fields)
+      this.drawingList = this.conf.fields
       Object.assign(this.formConf, this.conf)
     }else{
       const drawingListInDB = getDrawingList()
@@ -339,6 +343,7 @@ export default {
       formConfInDB && (this.formConf = formConfInDB)
     }
     this.activeFormItem(this.drawingList[0])
+    this.$nextTick(_ => this.getIpadMode())
 
     // const clipboard = new ClipboardJS('#copyNode', {
     //   text: trigger => {
@@ -356,6 +361,10 @@ export default {
     // })
   },
   methods: {
+    getIpadMode () {
+      const {clientHeight, clientWidth} = this.$refs.ipad
+      this.ipadMode = clientWidth * 0.74 > clientHeight ? 'landscape' : 'portrait'
+    },
     handlerListChange(val){
       const vm = this
       this.$store.commit('clearPCondition') // 清除所有条件 重新检测赋值
@@ -463,7 +472,7 @@ export default {
     cloneComponent(origin) {
       const clone = JSON.parse(JSON.stringify(origin));
       clone.formId = this.getNextId();
-      clone.span = formConf.span;
+      // clone.span = formConf.span;
       clone.renderKey = clone.formId + new Date().getTime(); // 改变renderKey后可以实现强制更新组件
       if (!clone.layout) clone.layout = "colFormItem";
       if (clone.layout === "colFormItem") {
@@ -488,7 +497,7 @@ export default {
         let children = rowFormItem.children;
         children.forEach((clone, index) => {
           clone.formId = rowFormItem.formId + index + 1;
-          clone.span = formConf.span;
+          // clone.span = formConf.span;
           clone.renderKey = clone.formId + new Date().getTime(); // 改变renderKey后可以实现强制更新组件
           if (!clone.layout) clone.layout = "colFormItem";
           if (clone.layout === "colFormItem") {
@@ -535,20 +544,25 @@ export default {
       })
     },
     preview(){
-      this.AssembleFormData();
-      let htmlCode = makeUpHtml(this.formData, "file");
-      let jsCode = makeUpJs(this.formData, "file");
-      let cssCode = makeUpCss(this.formData);
-      this.$router.push({
-        name: "preview",
-        params: {
-          formData: {
-            htmlCode,
-            jsCode,
-            cssCode
-          }
-        }
-      });
+       this.AssembleFormData();
+      // 这是沿用form-generator 创建文本模板的方法
+      /** 
+       let htmlCode = makeUpHtml(this.formData, "file");
+       let jsCode = makeUpJs(this.formData, "file");
+       let cssCode = makeUpCss(this.formData);
+       this.$router.push({
+         name: "preview",
+         params: {
+           formData: {
+             htmlCode,
+             jsCode,
+             cssCode
+           }
+         }
+       });
+      */
+     // 这是使用jsx渲染
+     this.$router.push({ name: "preview2", params: { formData: this.formData } });
     },
     generate(data) {
       const func = this[`exec${titleCase(this.operationType)}`];
@@ -707,11 +721,12 @@ export default {
 @import './styles/home';
 
 #ipad {
-  text-align: center;
-  padding-top: 15px;
+    height: 100%;
+    display: flex;
 
   .outeripad, .ipadbody, .ipadscreen {
     position: relative;
+    height: 100%;
   }
 
   .ipadcamera, .ipadhomebutton {
@@ -723,10 +738,34 @@ export default {
 .outeripad {
   box-shadow: 0 0 13px 3px rgba(0, 0, 0, 0.2);
   border-radius: 10px;
-  padding: 45px 25px;
-  max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: auto;
+
+  &.portrait{
+      padding: 45px 25px;
+      height: 85% !important;
+      width: 74%;
+      min-height: 560px;
+  }
+
+  &.landscape{
+    width: 90%;
+    padding: 25px 45px;
+    height: 78% !important;
+
+    .ipadcamera{
+      left: -20px;
+      top: 50%;
+      margin-top: -10px;
+    }
+
+    .ipadhomebutton{
+      margin-right: -38px;
+      top: 50%;
+      right: 0;
+      left: unset;
+      margin-top: -18px;
+    }
+  }
 
   .ipadbody {
     background-color: white;
@@ -757,6 +796,7 @@ export default {
     margin-top: 6px;
     margin-left: -15px;
     left: 50%;
+    cursor: pointer;
   }
 
   .el-radio-group {

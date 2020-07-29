@@ -46,7 +46,7 @@ export default {
         }
       ]
     },
-    "nodeId": "gB2",
+    "nodeId": "Gb2",
     "childNode": {
       "type": "approver",
       "content": "发起人自选",
@@ -91,8 +91,8 @@ export default {
         "optionalMultiUser": false,
         "optionalRange": "ALL"
       },
-      "nodeId": "nB2",
-      "prevId": "gB2"
+      "nodeId": "Nb2",
+      "prevId": "Gb2"
     },
     "conditionNodes": [
       {
@@ -110,8 +110,8 @@ export default {
           "priority": 0,
           "isDefault": false
         },
-        "nodeId": "lB2",
-        "prevId": "gB2",
+        "nodeId": "Lb2",
+        "prevId": "Gb2",
         "childNode": {
           "type": "approver",
           "content": "张三",
@@ -164,8 +164,8 @@ export default {
             "optionalMultiUser": false,
             "optionalRange": "ALL"
           },
-          "nodeId": "wB2",
-          "prevId": "lB2",
+          "nodeId": "Wb2",
+          "prevId": "Lb2",
           "childNode": {
             "type": "copy",
             "content": "xxx研发部",
@@ -183,8 +183,8 @@ export default {
               },
               "userOptional": true
             },
-            "nodeId": "yB2",
-            "prevId": "wB2"
+            "nodeId": "Yb2",
+            "prevId": "Wb2"
           }
         }
       },
@@ -198,8 +198,8 @@ export default {
           "priority": 1,
           "isDefault": true
         },
-        "nodeId": "mB2",
-        "prevId": "gB2",
+        "nodeId": "Mb2",
+        "prevId": "Gb2",
         "childNode": {
           "type": "approver",
           "content": "王五",
@@ -252,14 +252,48 @@ export default {
             "optionalMultiUser": false,
             "optionalRange": "ALL"
           },
-          "nodeId": "xB2",
-          "prevId": "mB2"
+          "nodeId": "Xb2",
+          "prevId": "Mb2"
         }
       }
     ]
   },
   "formData": {
     "fields": [
+      {
+        "cmpType": "common",
+        label: '组织机构',
+        tag: 'fc-org-select',
+        tagIcon: 'dept',
+        defaultValue: { dep: [{ "nodeId": 1, "deptId": 1, "deptName": "xxx公司" }] },
+        tabList: ['dep'],
+        buttonType: 'button',
+        title: '组织机构',
+        searchable: true,
+        maxNum: 1,
+        tagConfig: {
+          type: 'info',
+          closable: true,
+          'disable-transitions': false,
+          hit: false,
+          color: undefined,
+          size: 'small',
+          effect: 'light'
+        },
+        style: { width: '100%' },
+        span: 24,
+        labelWidth: null,
+        disabled: false,
+        required: true,
+        regList: [],
+        changeTag: true,
+        proCondition: true,
+        asSummary: false,
+        "layout": "colFormItem",
+        "formId": 20,
+        "renderKey": 1590641662215,
+        "vModel": "field20"
+      },
       {
         "cmpType": "common",
         "label": "姓名",
@@ -370,7 +404,7 @@ export default {
         "rowType": "table",
         "tagIcon": "row",
         "tag": "fc-input-table",
-        "type": "default",
+        "type": "table",
         "justify": "start",
         "align": "top",
         "label": "工作经历",
@@ -427,7 +461,7 @@ export default {
             "show-word-limit": false,
             "readonly": false,
             "disabled": false,
-            "required": false,
+            "required": true,
             "regList": [],
             "changeTag": true,
             "proCondition": false,

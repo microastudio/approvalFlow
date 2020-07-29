@@ -76,9 +76,8 @@ const setFcOrgSelectRule = ( conf, watchFuncList ) => {
       callback(new Error('${conf.title}不能为空'))
     }
   }, trigger: '${trigger[conf.tag]}', type: 'object' }`
-  const key = conf.isChild ? conf.vModel.replace( 'index', conf.childIndex ) : conf.vModel
-  buildWatchInHook( key, `function (newVal, oldVal) {
-      this.$refs["elForm"].validateField("${key}",()=>{ })
+  buildWatchInHook( conf.vModel, `function (newVal, oldVal) {
+      this.$refs["elForm"].validateField("${conf.vModel}",()=>{ })
   }`, watchFuncList )
   return rule
 }
@@ -94,6 +93,10 @@ function buildAttributes ( el, dataList, ruleList, optionsList, methodList, prop
       const options = titleCase( model )
       buildOptionMethod( `get${options}`, model, methodList )
     }
+  }
+
+  if ( el.expression ) {
+    buildExps( el, optionsList )
   }
 
   if ( el.props && el.props.props ) {
@@ -112,9 +115,9 @@ function buildAttributes ( el, dataList, ruleList, optionsList, methodList, prop
   }
 
   if ( el.children ) {
-    el.children.forEach( ( el2, index ) => {
+    el.children.forEach( el2 => {
       el2.isChild = true  // 临时变量
-      el2.childIndex = index  // 临时变量
+      el2.isTableChild = el.rowType === 'table'
       buildAttributes( el2, dataList, ruleList, optionsList, methodList, propsList, uploadVarList, watchFuncList, tableRefs )
     } )
   }
@@ -125,9 +128,10 @@ function mixinMethod ( type ) {
   const minxins = {
     file: confGlobal.formBtns ? {
       submitForm: `submitForm () {
-          if (!this.checkTableData()) return
+          const isTableValid = this.checkTableData()
           this.$refs['${confGlobal.formRef}'].validate(valid => {
             if(!valid) return
+            if (!isTableValid) return
             this.$notify({
               title: '表单数据',
               message: '请在控制台中查看数据输出',
@@ -139,7 +143,13 @@ function mixinMethod ( type ) {
         },`,
       resetForm: `resetForm() {
           this.$refs['${confGlobal.formRef}'].resetFields()
+          this.resetTableData()
         },`,
+      resetTableData: `resetTableData(){
+        Object.keys(this.tableRefs).forEach(vModel => {
+          const res = this.$refs[vModel].reset()
+        })
+      },`,
       // fc-input-table 需要单独进行表单校验
       checkTableData: `checkTableData () {
           let valid = true
@@ -185,11 +195,12 @@ function mixinMethod ( type ) {
 }
 
 function buildData ( conf, dataList, tableRefs ) {
-  if ( conf.vModel === undefined ) return
-
+  if ( conf.vModel === undefined || conf.isTableChild ) return
   let defaultValue
   if ( conf.rowType === 'table' ) {
-    dataList.push( `${conf.vModel}Conf: ${JSON.stringify( conf )},` )
+    defaultValue = {}
+    conf.children.forEach( t => ( defaultValue[t.vModel] = t.defaultValue === undefined ? null : t.defaultValue ) )
+    defaultValue = JSON.stringify( [defaultValue] )
     tableRefs[conf.vModel] = conf
   } else if ( typeof ( conf.defaultValue ) === 'string' && !conf.multiple ) {
     defaultValue = `'${conf.defaultValue}'`
@@ -202,7 +213,7 @@ function buildData ( conf, dataList, tableRefs ) {
 function buildRules ( conf, ruleList, watchFuncList ) {
   if ( conf.vModel === undefined ) return
   const rules = []
-  if ( trigger[conf.tag] ) {
+  if ( trigger[conf.tag] && !conf.isTableChild ) {
     if ( conf.required ) {
       const type = isArray( conf.defaultValue ) ? 'type: \'array\',' : ''
       let message = isArray( conf.defaultValue ) ? `请至少选择一个` : conf.placeholder
@@ -227,6 +238,10 @@ function buildOptions ( conf, optionsList ) {
   if ( conf.dataType === 'dynamic' ) { conf.options = [] }
   const str = `field${conf.formId}Options: ${JSON.stringify( conf.options )},`
   optionsList.push( str )
+}
+
+function buildExps ( conf, optionsList ) {
+  optionsList.push( `${conf.vModel}Exps: ${JSON.stringify( conf.expression )},` )
 }
 
 function buildProps ( conf, propsList ) {

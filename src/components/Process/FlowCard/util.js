@@ -1,15 +1,35 @@
 import nodeConfig from "./config.js";
 const isEmpty = data => data === null || data === undefined || data === ''
 const isEmptyArray = data => Array.isArray( data ) ? data.length === 0 : true
+
 export class NodeUtils {
   static globalID = 10000
+  /**
+   * 获取最大的节点ID 转换成10进制
+   * @param {*} data - 整个流程数据
+   */
+  static getMaxNodeId ( data ) {
+    let max = data.nodeId
+    const loop = node => {
+      if ( !node ) return
+      max < node.nodeId && ( max = node.nodeId )
+      node.childNode && ( loop( node.childNode ) )
+      Array.isArray( node.conditionNodes ) && node.conditionNodes.forEach( c => loop( c ) )
+    }
+    loop( data )
+    const chars = '0123456789ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz';
+    const len = chars.length
+    return max.split( '' ).reduce( ( sum, c, i ) => {
+      return sum + chars.indexOf( c ) * Math.pow( len, i )
+    }, 0 )
+  }
   /**
    * 根据自增数生成64进制id
    * @returns 64进制id字符串
    */
   static idGenerator () {
     let qutient = ++this.globalID
-    const chars = '0123456789abcdefghigklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ';
+    const chars = '0123456789ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz';
     const charArr = chars.split( "" )
     const radix = chars.length;
     const res = []
@@ -225,21 +245,25 @@ export class NodeUtils {
   /**
    * 重设节点优先级（条件节点）
    * @param {Node} cnode - 当前节点
-   * @param {Number} oldIndex - 替换前的优先级（在数组中的顺序）
+   * @param {Number} oldPriority - 替换前的优先级（在数组中的顺序）
    * @param {Node} processData - 整个流程图节点数据
    */
-  static resortPrioByCNode ( cnode, oldIndex, processData ) {
+  static resortPrioByCNode ( cnode, oldPriority, processData ) {
+    // 当前节点为默认节点 取消修改优先级
     if ( cnode.properties.isDefault ) {
+      cnode.properties.priority = oldPriority
       return
     }
     let prevNode = this.getPreviousNode( cnode.prevId, processData )
-    let newIndex = cnode.properties.priority
-    if ( prevNode.conditionNodes[newIndex].properties.isDefault ) {
+    let newPriority = cnode.properties.priority
+    // 替换节点为默认节点 取消修改优先级
+    if ( prevNode.conditionNodes[newPriority].properties.isDefault ) {
+      cnode.properties.priority = oldPriority
       return
     }
-    let delNode = prevNode.conditionNodes.splice( newIndex, 1, cnode )[0]
-    delNode.properties.priority = oldIndex
-    prevNode.conditionNodes[oldIndex] = delNode
+    let delNode = prevNode.conditionNodes.splice( newPriority, 1, cnode )[0]
+    delNode.properties.priority = oldPriority
+    prevNode.conditionNodes[oldPriority] = delNode
   }
 
   /**
@@ -280,7 +304,7 @@ export class NodeUtils {
       // 和后一个数组项交换位置 Array.prototype.splice会返回包含被删除的项的集合（数组）
       lastNode.properties.priority = index
       branchData[index].properties.priority = index + 1
-      lastNode = branchData.splice( index, 1, lastNode )[0]
+      branchData[index + 1] = branchData.splice( index, 1, branchData[index + 1] )[0]
     }
   }
   /**

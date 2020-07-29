@@ -92,6 +92,7 @@ export const inputComponents = [{
   tagIcon: 'number',
   placeholder: '',
   defaultValue: undefined,
+  style: { width: null },
   span: 24,
   labelWidth: null,
   min: undefined,
@@ -112,6 +113,7 @@ export const inputComponents = [{
   tagIcon: 'amount',
   placeholder: '请输入',
   defaultValue: undefined,
+  style: { width: null },
   span: 24,
   labelWidth: null,
   min: undefined,
@@ -134,10 +136,10 @@ export const selectComponents = [{
   tag: 'el-select',
   tagIcon: 'select',
   placeholder: '请选择',
+  style: { width: '100%' },
   defaultValue: undefined,
   span: 24,
   labelWidth: null,
-  style: { width: '100%' },
   clearable: true,
   disabled: false,
   required: false,
@@ -435,25 +437,25 @@ export const selectComponents = [{
   proCondition: true,
   asSummary: false
 },
-//   {
-//     label: '评分',
-//     tag: 'el-rate',
-//     tagIcon: 'rate',
-//     defaultValue: 0,
-//     span: 24,
-//     labelWidth: null,
-//     style: {},
-//     max: 5,
-//     'allow-half': false,
-//     'show-text': false,
-//     'show-score': false,
-//     disabled: false,
-//     required: false,
-//     regList: [],
-//     changeTag: true,
-// proCondition: false,
-// asSummary: false
-//   },
+{
+  label: '评分',
+  tag: 'el-rate',
+  tagIcon: 'rate',
+  defaultValue: 0,
+  span: 24,
+  labelWidth: null,
+  style: {},
+  max: 5,
+  'allow-half': false,
+  'show-text': false,
+  'show-score': false,
+  disabled: false,
+  required: false,
+  regList: [],
+  changeTag: true,
+  proCondition: false,
+  asSummary: false
+},
 //   {
 //     label: '颜色选择',
 //     tag: 'el-color-picker',
@@ -493,19 +495,21 @@ export const selectComponents = [{
   proCondition: false,
   asSummary: false
 },
-  // {
-  //   label: '计算公式',
-  //   tag: 'fc-calculation',
-  //   tagIcon: 'upload',
-  //   defaultValue: null,
-  //   labelWidth: null,
-  //   disabled: false,
-  //   required: true,
-  //   changeTag: true,
-  //   calculationTarget: [],
-  //   proCondition: true,
-  //   asSummary: false
-  // }
+{
+  label: '计算公式',
+  type: 'calculate',
+  tag: 'fc-calculate',
+  showChinese: true,
+  tagIcon: 'calculate',
+  defaultValue: null,
+  labelWidth: null,
+  disabled: false,
+  required: false,
+  changeTag: true,
+  expression: [],
+  proCondition: true,
+  asSummary: false
+}
 ]
 // 容器组件
 export const layoutComponents = [{
@@ -523,9 +527,9 @@ export const layoutComponents = [{
 {
   layout: 'rowFormItem',
   rowType: 'table',
-  tagIcon: 'row',
+  tagIcon: 'table',
   tag: 'fc-input-table',
-  type: 'default',
+  type: 'table', // list
   justify: 'start',
   align: 'top',
   label: '表格/明细',
@@ -533,7 +537,6 @@ export const layoutComponents = [{
   children: [],
   actionText: '添加',
   tableConf: {},
-  showDivider: false,
   'show-summary': true
 }]
 
@@ -685,6 +688,7 @@ export const customMadeComponents = [
   ] )]
 // .map( t => Object.assign( { cmpType: 'custom', t } ) )
 // 组件rule的触发方式，无触发方式的组件不生成rule
+// inputTable组件也有一份此常量的copy 如有改动 最好同步
 export const trigger = {
   'el-input': 'blur',
   'el-input-number': 'blur',
@@ -698,5 +702,5 @@ export const trigger = {
   'fc-amount': 'change',
   'fc-time-duration': 'change',
   'fc-date-duration': 'change',
-  'fc-org-select': 'change'
+  'fc-org-select': 'input'
 }

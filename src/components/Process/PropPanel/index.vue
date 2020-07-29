@@ -43,7 +43,7 @@
         <row-wrapper 
           :key="index" 
           :title="item.label" 
-          v-if="couldShowIt(item,'el-input-number','fc-date-duration','fc-time-duration','fc-amount')">
+          v-if="couldShowIt(item,'el-input-number','fc-date-duration','fc-time-duration','fc-amount', 'fc-calculate')">
           <num-input
             :key="index"
             :title="timeTangeLabel(item)"
@@ -104,7 +104,7 @@
 
     <!-- 审批人 -->
     <section class="approver-pane" style="height:100%;" v-if="value && (isApproverNode() || isStartNode())">
-      <el-tabs v-model="activeName" style="height:100%;">
+      <el-tabs v-model="activeName"  class="pane-tab">
         <el-tab-pane :label="'设置' + (value.type === 'approver' ? '审批人' : '发起人')" name="config">
           <!-- 开始节点 -->
           <el-row style="padding: 10px;"  v-if="value.type === 'start'">
@@ -151,7 +151,7 @@
                 @change="onOrgChange" />
               </div>
             </div>
-            <div class="option-box" style="border-bottom: 1px solid #e5e5e5;" v-if="approverForm.approvers && approverForm.approvers.length > 1 && !['optional','myself'].includes(approverForm.assigneeType)">
+            <div class="option-box" style="border-bottom: 1px solid #e5e5e5;" v-if="orgCollection[approverForm.assigneeType] && orgCollection[approverForm.assigneeType].length > 1 || ['optional'].includes(approverForm.assigneeType)">
               <p>多人审批时采用的审批方式</p>
               <el-radio v-model="approverForm.counterSign" :label="true" class="radio-item">会签（须所有审批人同意）</el-radio>
               <br>
@@ -225,6 +225,15 @@ const rangeType = {
   'gte':'≥',
   'eq': '=',
 }
+const defaultApproverForm = {
+  approvers:[], // 审批人集合
+  assigneeType: "user", // 指定审批人
+  formOperates:[], // 表单操作权限集合
+  counterSign: true, //是否为会签
+  // 审批类型为自选 出现 optionalMultiUser optionalRange
+  optionalMultiUser: false,
+  optionalRange: 'ALL', // USER<最多十个> / ALL / ROLE 
+}
 export default {
   props: [/*当前节点数据*/"value", /*整个节点数据*/"processData"],
   data() {
@@ -255,15 +264,7 @@ export default {
       startForm:{
         formOperates: []
       },
-      approverForm: {
-        approvers:[], // 审批人集合
-        assigneeType: "user", // 指定审批人
-        formOperates:[], // 表单操作权限集合
-        counterSign: true, //是否为会签
-        // 审批类型为自选 出现 optionalMultiUser optionalRange
-        optionalMultiUser: false,
-        optionalRange: 'ALL', // USER<最多十个> / ALL / ROLE 
-      },
+      approverForm: JSON.parse(JSON.stringify(defaultApproverForm)),
 
       optionalOptions: [
         {
@@ -413,7 +414,7 @@ export default {
         if(cValue === undefined || cValue === null){
           return 
         }
-        const numberTypeCmp = ['el-input-number','fc-date-duration','fc-time-duration','fc-amount']
+        const numberTypeCmp = ['el-input-number','fc-date-duration','fc-time-duration','fc-amount', 'fc-calculate']
         if(numberTypeCmp.includes(t.tag)){
           if(cValue.type === 'bet'){
             const numVal = cValue.value
@@ -470,7 +471,7 @@ export default {
       this.approverForm.approvers = this.orgCollection[assigneeType]
       Object.assign(this.properties, this.approverForm, {formOperates})
       this.$emit("confirm", this.properties, content || '请设置审批人')
-      this.visible = false;
+      this.visible = false
     },
     // 确认修改
     confirm() {
@@ -529,7 +530,11 @@ export default {
      * 初始化审批节点所需数据
      */
     initApproverNodeData() {
-      Object.assign(this.approverForm, this.value.properties)
+      for (const key in this.approverForm) {
+        if (this.value.properties.hasOwnProperty(key)) {
+          this.approverForm[key] = this.value.properties[key];
+        }
+      }
       const approvers = this.approverForm.approvers
       this.resetOrgColl()
       if (Array.isArray(this.approverForm.approvers)) {
@@ -560,7 +565,10 @@ export default {
   },
   watch: {
     visible(val) {
-      if (!val) return
+      if (!val) {
+        this.approverForm = JSON.parse(JSON.stringify(defaultApproverForm)) // 重置数据为默认状态
+        return
+      }
       this.processData.properties.formOperates = 
         this.initFormOperates(this.processData)
         .map(t=>({formId: t.formId, formOperate: t.formOperate}))
@@ -606,7 +614,11 @@ export default {
     overflow: hidden;
   }
 
-  >>> .el-tabs--top .el-tabs__item.is-top:nth-child(2) {
+  .pane-tab{
+    height: 100%;
+  }
+
+  .pane-tab >>>  .el-tabs__item.is-top:nth-child(2) {
     padding-left: 20px;
   }
 

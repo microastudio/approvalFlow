@@ -90,16 +90,21 @@ function colWrapper ( element, str ) {
 }
 
 const layouts = {
-  colFormItem ( element ) {
+  colFormItem ( element, noFormItem = false ) {
     let labelWidth = ''
     if ( element.labelWidth && element.labelWidth !== confGlobal.labelWidth ) {
       labelWidth = `label-width="${element.labelWidth}px"`
     }
-    let rules = '', label = `label="${element.label}"`, prop = `prop="${element.vModel}"`
-    const required = !trigger[element.tag] && element.required ? 'required' : ''
-    const tagDom = tags[element.tag] ? tags[element.tag]( element ) : null
 
-    let str = `<el-form-item ${labelWidth} ${label} ${prop}  ${required} ${rules}>
+    let rules = '', label = `label="${noFormItem ? '' : element.label}"`, prop = `prop="${element.vModel}"`
+    if ( noFormItem ) {
+      labelWidth = `label-width="0px"`
+    }
+    const required = ( !trigger[element.tag] && element.required ) || element.tag === 'fc-org-select' ? 'required' : ''
+    const tagDom = tags[element.tag] ? tags[element.tag]( element ) : null
+    const tableTitle = noFormItem ? `<div style="font-size: 14px;padding:6px 0px;margin-bottom: 4px;border-bottom: 1px solid #e5e5e5;">${element.label}</div>` : ''
+    let str = `${tableTitle}
+      <el-form-item ${labelWidth} ${label} ${prop}  ${required} ${rules}>
         ${tagDom}
       </el-form-item>`
     str = colWrapper( element, str )
@@ -107,7 +112,7 @@ const layouts = {
   },
   rowFormItem ( element ) {
     if ( element.rowType === 'table' ) {
-      return this.colFormItem( element )
+      return this.colFormItem( element, element.type === 'list' )
     }
     const type = element.type === 'default' ? '' : `type="${element.type}"`
     const justify = element.type === 'default' ? '' : `justify="${element.justify}"`
@@ -172,7 +177,7 @@ const tags = {
     return `<${el.tag} ${vModel} ${type} ${placeholder} ${maxlength} ${showWordLimit} ${readonly} ${disabled} ${clearable} ${prefixIcon} ${suffixIcon} ${showPassword} ${autosize} ${width}>${child}</${el.tag}>`
   },
   'el-input-number': el => {
-    const { disabled, vModel, placeholder } = attrBuilder( el )
+    const { disabled, vModel, placeholder, width } = attrBuilder( el )
     const controlsPosition = el['controls-position'] ? `controls-position=${el['controls-position']}` : ''
     const min = el.min ? `:min='${el.min}'` : ''
     const max = el.max ? `:max='${el.max}'` : ''
@@ -180,7 +185,7 @@ const tags = {
     const stepStrictly = el['step-strictly'] ? 'step-strictly' : ''
     const precision = el.precision ? `:precision='${el.precision}'` : ''
 
-    return `<${el.tag} ${vModel} ${placeholder} ${step} ${stepStrictly} ${precision} ${controlsPosition} ${min} ${max} ${disabled}></${el.tag}>`
+    return `<${el.tag} ${vModel} ${placeholder} ${step} ${stepStrictly} ${precision} ${controlsPosition} ${min} ${max} ${width} ${disabled}></${el.tag}>`
   },
   'fc-org-select': function ( el ) {
     const { disabled, vModel, placeholder, width } = attrBuilder( el )
@@ -196,6 +201,13 @@ const tags = {
     const tag = this['el-input-number']( el )
     const showChinese = el.showChinese ? `:showChinese='${el.showChinese}'` : ''
     return addPropToTag( tag, showChinese )
+  },
+  'fc-calculate': function ( el ) {
+    const { vModel } = attrBuilder( el )
+    const showChinese = el.showChinese ? `:showChinese='${el.showChinese}'` : ''
+    const formData = `:formData="${confGlobal.formModel}"`
+    const expression = `:expression="${el.vModel}Exps" `
+    return createTagHTML( el.tag, vModel, showChinese, formData, expression )
   },
   'el-select': el => {
     const {
@@ -330,7 +342,12 @@ const tags = {
     return `<${el.tag} ${ref} ${fileList} ${action} ${autoUpload} ${multiple} ${beforeUpload} ${listType} ${accept} ${name} ${disabled}>${child}</${el.tag}>`
   },
   'fc-input-table': el => {
-    return `<${el.tag} ref="${el.vModel}" :config="tableRefs['${el.vModel}']"></${el.tag}>`
+    let labelWidth = '', formSize = ''
+    if ( el.type == 'list' ) {
+      labelWidth = `label-width="${el.labelWidth || confGlobal.labelWidth}px"`
+      formSize = `form-size="${confGlobal.size}"`
+    }
+    return `<${el.tag} ref="${el.vModel}" ${formSize} ${labelWidth} :config="tableRefs['${el.vModel}']" :value.sync="${confGlobal.formModel}.${el.vModel}"></${el.tag}>`
   }
 }
 

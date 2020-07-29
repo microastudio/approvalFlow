@@ -1,12 +1,11 @@
-/**
- *Copyright: Copyright (c) 2020
- *Author:JakHuang
- *Version 1.0 
- *Title: form-generator/Element UI表单设计及代码生成器 
- *GitHub: https://github.com/JakHuang/form-generator
- */
-
-import { makeMap } from '../utils'
+const makeMap = ( attrStr, expectsLowerCase ) => {
+  const attrs = attrStr.split( ',' )
+  const map = Object.create( null )
+  attrs.forEach( t => map[t] = true )
+  return expectsLowerCase ?
+    val => map[val.toLowerCase()] :
+    val => map[val]
+}
 
 // 参考https://github.com/vuejs/vue/blob/v2.6.10/src/platforms/web/server/util.js
 const isAttr = makeMap(
@@ -25,9 +24,15 @@ const isAttr = makeMap(
   + 'target,title,type,usemap,value,width,wrap'
 )
 
-function vModel ( self, dataObject, defaultValue ) {
-  dataObject.props.value = defaultValue
+function vModel ( self, dataObject, value ) {
+  dataObject.props.value = value
   dataObject.on.input = val => {
+    console.log( 'input' )
+    self.$emit( 'input', val )
+  }
+  // 因为有些组件的v-model绑定的事件是change 所以这里也得监听
+  dataObject.on.change = val => {
+    console.log( 'change' )
     self.$emit( 'input', val )
   }
 }
@@ -113,7 +118,7 @@ export default {
     Object.keys( confClone ).forEach( key => {
       const val = confClone[key]
       if ( key === 'vModel' ) {
-        vModel( this, dataObject, confClone.defaultValue )
+        vModel( this, dataObject, this.value || confClone['defaultValue'] )
       } else if ( dataObject[key] ) {
         dataObject[key] = val
       } else if ( !isAttr( key ) ) {
@@ -124,5 +129,5 @@ export default {
     } )
     return h( this.conf.tag, dataObject, children )
   },
-  props: ['conf']
+  props: ['conf', 'value']
 }
