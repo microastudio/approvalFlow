@@ -454,20 +454,26 @@ export default {
       this.drawingList.push(clone);
       this.activeFormItem(clone);
     },
-    getMaxId(){
+    getMaxId () {
       if(this.drawingList.length){
-        return this.drawingList.reduce((maxId, cmp) => {
-          cmp.formId > maxId && (maxId = cmp.formId )
-          if(Array.isArray(cmp.children)){
-            maxId = cmp.children.reduce((max, child) => Math.max(max, child.formId), maxId)
+        let maxId = 0
+        const loop = (data, parent) => {
+          if(!data) return
+          Array.isArray(data.children) && data.children.forEach(child => loop(child, data))
+          if(Array.isArray(data)) {
+            data.forEach(loop)
+          }else{
+            maxId = Math.max(data.formId, maxId)
           }
-          return maxId
-        }, 0)
+        }
+        loop(this.drawingList)
+        return maxId
       }
       return 0
     },
     getNextId(){
-      return this.getMaxId() + 1
+      let maxId = this.getMaxId() + 1
+      return maxId
     },
     cloneComponent(origin) {
       const clone = JSON.parse(JSON.stringify(origin));
@@ -546,23 +552,23 @@ export default {
     preview(){
        this.AssembleFormData();
       // 这是沿用form-generator 创建文本模板的方法
-      /** 
-       let htmlCode = makeUpHtml(this.formData, "file");
-       let jsCode = makeUpJs(this.formData, "file");
-       let cssCode = makeUpCss(this.formData);
-       this.$router.push({
-         name: "preview",
-         params: {
-           formData: {
-             htmlCode,
-             jsCode,
-             cssCode
-           }
-         }
-       });
-      */
+      
+      //  let htmlCode = makeUpHtml(this.formData, "file");
+      //  let jsCode = makeUpJs(this.formData, "file");
+      //  let cssCode = makeUpCss(this.formData);
+      //  this.$router.push({
+      //    name: "preview",
+      //    params: {
+      //      formData: {
+      //        htmlCode,
+      //        jsCode,
+      //        cssCode
+      //      }
+      //    }
+      //  });
+    
      // 这是使用jsx渲染
-     this.$router.push({ name: "preview2", params: { formData: this.formData } });
+     this.$router.push({ name: "jsxPreview", params: { formData: this.formData } });
     },
     generate(data) {
       const func = this[`exec${titleCase(this.operationType)}`];

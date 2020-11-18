@@ -27,12 +27,10 @@ const isAttr = makeMap(
 function vModel ( self, dataObject, value ) {
   dataObject.props.value = value
   dataObject.on.input = val => {
-    console.log( 'input' )
     self.$emit( 'input', val )
   }
   // 因为有些组件的v-model绑定的事件是change 所以这里也得监听
   dataObject.on.change = val => {
-    console.log( 'change' )
     self.$emit( 'input', val )
   }
 }
@@ -96,13 +94,16 @@ const componentChild = {
 
 export default {
   render ( h ) {
+    const confClone = JSON.parse( JSON.stringify( this.conf ) )
     const dataObject = {
       attrs: {},
-      props: {},
+      props: {
+        formData: this.formData,
+        value: this.value || confClone['defaultValue']
+      },
       on: {},
       style: {}
     }
-    const confClone = JSON.parse( JSON.stringify( this.conf ) )
     const children = []
 
     const childObjs = componentChild[confClone.tag]
@@ -129,5 +130,5 @@ export default {
     } )
     return h( this.conf.tag, dataObject, children )
   },
-  props: ['conf', 'value']
+  props: ['conf', 'value', 'formData']
 }

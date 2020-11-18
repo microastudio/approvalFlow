@@ -6,16 +6,17 @@
 </template>
 <script>
 import { timeCalculate } from '@/assets/utils' 
+const defaultVal = ['','']
 export default {
   model:{
     prop: 'value',
     event: 'change'
   },
-  props:["cmpType", "showDuration", "tag", "tagIcon", "defaultValue", "labelWidth", "clearable", "is-range", "range-separator", "start-placeholder", "end-placeholder", "format", "value-format", "regList", "changeTag", "proCondition", "asSummary", "formId", "renderKey", "layout", "value"],
+  props:["value", "cmpType", "showDuration", "tag", "tagIcon", "defaultValue", "labelWidth", "clearable", "is-range", "range-separator", "start-placeholder", "end-placeholder", "format", "value-format", "regList", "changeTag", "proCondition", "asSummary", "formId", "renderKey", "layout", "value"],
   name: 'fc-time-duration',
   data(){
     return {
-      timeRange: this.value,
+      timeRange: this.value || this.defaultValue || defaultVal ,
       duration: ''
     }
   },
@@ -31,6 +32,13 @@ export default {
         this.$emit('change', val)
       },
       immediate: true
+    },
+    value (val) {
+      if (!val) {
+        this.timeRange = ['', '']
+      } else if (Array.isArray(val) && this.timeRange + '' !== val + '') {
+        this.timeRange = val
+      }
     }
   }
 }

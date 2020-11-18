@@ -1,19 +1,19 @@
 <template>
   <div class="fc-amount">
-    <el-input-number style="width: 100%;" v-model="innerValue" v-bind="$props" v-on="$listeners"></el-input-number>
+    <el-input-number style="width: 100%;" v-model="innerValue" v-bind="$props" v-on="$listeners" @input="handleInput"></el-input-number>
     <div class="explain-text" v-if="showChinese">大写：{{chinese}}</div>
   </div>
 </template>
 <script>
 import {getAmountChinese} from '@/assets/utils'
 export default {
-  model:{
+  model: {
     prop: 'value',
     event: 'change'
   },
-  props:["cmpType", "tag","tagIcon", "precision", "labelWidth", "step-strictly", "controls", "controls-position", "regList", "changeTag", "proCondition", "showChinese", "formId", "renderKey", "layout"],
+  props: ["value", "cmpType", "tag","tagIcon", "precision", "labelWidth", "step-strictly", "controls", "controls-position", "regList", "changeTag", "proCondition", "showChinese", "formId", "renderKey", "layout"],
   name: 'fc-amount',
-  data(){
+  data () {
     return {
       innerValue: this.value
     }
@@ -23,12 +23,17 @@ export default {
       return this.showChinese ? getAmountChinese(this.innerValue) : ''
     }
   },
-  watch:{
-    innerValue(val){
-     val && this.$emit('change', +val.toFixed(2))
+  methods: {
+    handleInput (val) {
+      this.$emit('change', val)   
     },
-    value(val){
-      this.innerValue = val
+  },
+  watch:{
+    
+    value (val) {
+      if (val !== this.innerValue) {
+        this.innerValue = val
+      }
     }
   }
 }

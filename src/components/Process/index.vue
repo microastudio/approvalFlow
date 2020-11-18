@@ -55,9 +55,10 @@ export default {
      * @param { Object } val - 缩放增量 是step的倍数 可正可负
      */
     changeScale(val) {
-      if (this.scaleVal > 0 && this.scaleVal < 200) {
+      let v = this.scaleVal + val;
+      if (v > 0 && v <= 200) {
         // 缩放介于0%~200%
-        this.scaleVal += val;
+        this.scaleVal = v;
       }
     },
     /**
@@ -69,8 +70,9 @@ export default {
       let oldProp = this.activeData.properties;
       this.activeData.properties = value;
       // 修改优先级
-      if (NodeUtils.isConditionNode(this.activeData) && value.priority !== oldProp.priority) {
-        NodeUtils.resortPrioByCNode(
+      if (NodeUtils.isConditionNode(this.activeData) ) {
+        value.priority !== oldProp.priority 
+        && NodeUtils.resortPrioByCNode(
           this.activeData,
           oldProp.priority,
           this.data
@@ -110,7 +112,6 @@ export default {
     }
   },
   render: function(h) {
-    NodeUtils.globalID =  NodeUtils.getMaxNodeId(this.data)
     return (
       <div class="flow-container">
         <div class="scale-slider">

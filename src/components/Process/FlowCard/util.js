@@ -3,32 +3,14 @@ const isEmpty = data => data === null || data === undefined || data === ''
 const isEmptyArray = data => Array.isArray( data ) ? data.length === 0 : true
 
 export class NodeUtils {
-  static globalID = 10000
-  /**
-   * 获取最大的节点ID 转换成10进制
-   * @param {*} data - 整个流程数据
-   */
-  static getMaxNodeId ( data ) {
-    let max = data.nodeId
-    const loop = node => {
-      if ( !node ) return
-      max < node.nodeId && ( max = node.nodeId )
-      node.childNode && ( loop( node.childNode ) )
-      Array.isArray( node.conditionNodes ) && node.conditionNodes.forEach( c => loop( c ) )
-    }
-    loop( data )
-    const chars = '0123456789ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz';
-    const len = chars.length
-    return max.split( '' ).reduce( ( sum, c, i ) => {
-      return sum + chars.indexOf( c ) * Math.pow( len, i )
-    }, 0 )
-  }
+ 
   /**
    * 根据自增数生成64进制id
    * @returns 64进制id字符串
    */
   static idGenerator () {
-    let qutient = ++this.globalID
+    let qutient = (new Date() - new Date('2020-08-01'))
+    qutient += Math.ceil(Math.random() * 1000) // 防止重複
     const chars = '0123456789ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz';
     const charArr = chars.split( "" )
     const radix = chars.length;
@@ -104,8 +86,10 @@ export class NodeUtils {
   static deleteNode ( nodeData, processData, checkEmpty = true ) {
     let prevNode = this.getPreviousNode( nodeData.prevId, processData )
     if ( checkEmpty && prevNode.type === 'empty' ) {
-      if ( this.isConditionNode( nodeData ) ) {
-        this.deleteNode( prevNode, processData )
+      if ( this.isConditionNode( nodeData )) {
+        const willDelBranch = prevNode.conditionNodes.length === 2
+        const target = willDelBranch ? prevNode : nodeData
+        this.deleteNode( target, processData,  willDelBranch)
       } else {
         if ( isEmptyArray( prevNode.conditionNodes ) ) {
           this.deleteNode( prevNode, processData )
@@ -116,6 +100,8 @@ export class NodeUtils {
       // !this.isConditionNode(nodeData) && this.deleteNode(nodeData, processData)
       return
     }
+
+
     let concatChild = ( prev, delNode ) => {
       prev.childNode = delNode.childNode
       isEmptyArray( prev.conditionNodes ) && ( prev.conditionNodes = delNode.conditionNodes )
@@ -139,6 +125,9 @@ export class NodeUtils {
           endNode.childNode.prevId = endNode.nodeId
         }
         concatChild( prevNode, anotherCon )
+        if (prevNode.childNode && prevNode.childNode.type === 'empty') {
+          this.deleteNode(prevNode.childNode, prevNode)
+        }
       }
       // 重新编排优先级
       cons.forEach( ( c, i ) => c.properties.priority = i )
@@ -174,7 +163,7 @@ export class NodeUtils {
       } )
       delete data.conditionNodes
     }
-    if ( oldChildNode && oldChildNode.type === 'empty' ) {
+    if ( oldChildNode && oldChildNode.type === 'empty' && newChildNode.type !== 'empty' && oldChildNode.conditionNodes.length === 0 ) {
       this.deleteNode( oldChildNode, data )
     }
   }

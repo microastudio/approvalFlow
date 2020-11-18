@@ -16,11 +16,13 @@ const setFcOrgSelectRule = ( conf, ctx ) => {
       callback(count ? undefined : new Error(`${conf.title}不能为空`))
     }, 
     trigger: trigger[conf.tag],
-    type: 'object' 
+    type: 'object',
+    required: true, 
   }
 }
 /**
  * 收集表单必填项并组装成ElementUI表单校验得rules选项
+ * 表格除外 表格自带校验
  */
 function buildRules ( conf, ctx ) {
   if ( conf.vModel === undefined ||  !trigger[conf.tag]) return
@@ -47,8 +49,7 @@ function buildRules ( conf, ctx ) {
 
 var setData = (ctx, val, prop, init = false) => {
   if (!prop) return
-  if (init) ctx.$set(ctx[ctx.confGlobal.formModel], prop, val)
-  else ctx[ctx.confGlobal.formModel][prop] = val
+  ctx.$set(ctx[ctx.confGlobal.formModel], prop, val)
 }
 
 var _isMounted = false // 收集默认值 渲染完成之后防止重复收集默认值
@@ -56,20 +57,40 @@ var _isMounted = false // 收集默认值 渲染完成之后防止重复收集�
 const buildData = (ctx, value, prop) => setData(ctx, value, prop, true)
 
 const layouts = {
-  colFormItem: function (conf,  h, ctx, noFormItem = false,) {
+  colFormItem: function (conf,  h, ctx, isList = false,) {
     buildRules(conf, ctx)
     !_isMounted && buildData(ctx, conf.defaultValue, conf.vModel)
     let labelWidth = ''
     if ( conf.labelWidth ) labelWidth = `${conf.labelWidth}px`
-    if ( noFormItem ) labelWidth = "0px"
+    if ( isList ) labelWidth = "0px"
     const required = ( !trigger[conf.tag] && conf.required ) || conf.tag === 'fc-org-select' 
+    const handleInput = val => {
+      setData(ctx, val, conf.vModel)
+      if (conf.tag === 'fc-org-select') {
+        /**
+         * 组织机构组件数据复杂 
+         * async-validator不一定能准确捕获到数据变化 
+         * 所以在这里手动校验一次
+         */
+        ctx.$refs[ctx.confGlobal.formRef].validateField(conf.vModel,()=>{ })
+      }
+    }
     let item =  <el-col span={conf.span}>
-                  <el-form-item label-width={labelWidth} label={noFormItem ? '' : conf.label} prop={conf.vModel}  required={required}>
-                    <render onInput={val => setData(ctx, val, conf.vModel)} value={ctx[ctx.confGlobal.formModel][conf.vModel]} ref={conf.rowType === 'table'  ? conf.vModel : undefined} conf={conf}  />
+                  <el-form-item 
+                  label-width={labelWidth} 
+                  label={isList ? '' : conf.label} 
+                  prop={conf.vModel}>
+                    <render
+                    formData={ctx[ctx.confGlobal.formModel]}
+                    conf={conf} 
+                    value={ctx[ctx.confGlobal.formModel][conf.vModel]} 
+                    ref={conf.rowType === 'table' ? conf.vModel : undefined} 
+                    onInput={handleInput} 
+                    />
                   </el-form-item>
                 </el-col>
 
-    if (noFormItem) {
+    if (isList) {
       var tableTitle = <el-col span={24} style="font-size: 14px;padding:6px 0px;margin-bottom: 4px;border-bottom: 1px solid #e5e5e5;">{conf.label}</el-col>
       return [tableTitle, item]
     }
@@ -156,7 +177,8 @@ export default {
 
     resetTableData(){
       Object.keys(this.tableRefs).forEach(vModel => {
-        const res = this.$refs[vModel].reset()
+        // 由于render.js返回的动态组件 所以动态组件相当于是render的子组件
+        const res = this.$refs[vModel]['$children'][0].reset()
       })
     },
 
